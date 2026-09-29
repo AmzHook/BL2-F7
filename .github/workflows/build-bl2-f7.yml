@@ -1,62 +1,25 @@
+name: Build BL2-F7 Android
 
-    
-  
-      - name: Prepare Eden v0.2.1 and apply BL2-F7 patch
-        shell: bash
-        run: |
-          set -euxo pipefail
-          ./scripts/prepare-eden.sh
+on:
+  workflow_dispatch:
+    inputs:
+      build_variant:
+        description: "Choose the APK type"
+        required: true
+        default: instrumented
+        type: choice
+        options:
+          - instrumented
+          - release
 
-      - name: Static verification
-        shell: bash
-        run: |
-          set -euxo pipefail
-          cd eden
-          python3 ../patch-kit/scripts/verify_bl2_f7.py
+permissions:
+  contents: read
 
-      - name: Build APK
-        shell: bash
-        run: |
-          set -euxo pipefail
-          cd eden/src/android
-          chmod +x gradlew
-          if [ "${{ inputs.build_variant }}" = "release" ]; then
-            ./gradlew assembleBl2F7Release --no-daemon --stacktrace
-          else
-            ./gradlew assembleBl2F7RelWithDebInfo --no-daemon --stacktrace
-          fi
+concurrency:
+  group: bl2-f7-${{ github.ref }}
+  cancel-in-progress: true
 
-      - name: Collect outputs
-        if: always()
-        shell: bash
-        run: |
-          set -euxo pipefail
-          mkdir -p out/apk out/reports
-          if [ -d eden/src/android/app/build/outputs/apk ]; then
-            find eden/src/android/app/build/outputs/apk -type f -name '*.apk' -print -exec cp '{}' out/apk/ \;
-          fi
-          if [ -d eden/src/android/app/build/reports ]; then
-            cp -a eden/src/android/app/build/reports/. out/reports/ || true
-          fi
-          git -C eden rev-parse HEAD > out/eden-base-sha.txt || true
-          printf '%s\n' "${{ inputs.build_variant }}" > out/build-variant.txt
-          find out -maxdepth 3 -type f -print
-
-      - name: Upload BL2-F7 APK
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: BL2-F7-${{ inputs.build_variant }}-${{ github.run_number }}
-          path: out/apk/*.apk
-          if-no-files-found: error
-          retention-days: 30
-
-      - name: Upload build reports on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: BL2-F7-build-reports-${{ github.run_number }}
-          path: out/
-          if-no-files-found: warn
-          retention-days: 14
-
+env:
+  EDEN_SHA: 58c1e20ee58efa3900ba616207d460886214480b
+  ANDROID_NDK_VERSION: 28.2.13676358
+  ANDROID_CMAKE_VERSION: 3.22.1
