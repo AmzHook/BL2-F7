@@ -1,95 +1,77 @@
-# BL2-F7 — GitHub build repository
+# BL2-F7 v0.4 — Single-Title + Turnip V36 + 60 FPS built-in
 
-This repository scaffold builds **BL2-F7** from the exact Eden **v0.2.1** base commit:
+Fork/patch kit for **Eden v0.2.1** targeting **Borderlands 2** on **POCO F7 / Snapdragon 8s Gen 4 / Adreno 825**.
+
+Base Eden revision:
 
 `58c1e20ee58efa3900ba616207d460886214480b`
 
-Target: POCO F7 / Snapdragon 8s Gen 4 / Adreno 825, using Borderlands 2 Program ID `010096F00FF22000`.
+## What v0.3 changes
 
-This repository contains only the BL2-F7 patch/build tooling. It does **not** contain Borderlands 2, firmware, keys, copyrighted game assets, or a prebuilt Eden source tree.
+- BL2-only library filtering and native boot guard.
+- Borderlands 2 title ID: `010096F00FF22000`.
+- Pinned Turnip Gen8 V36 downloaded during GitHub Actions and verified by SHA-256.
+- V36 is staged automatically on POCO F7 before Vulkan initialization.
+- Built-in 60 FPS IPS32 patch: no external `load/` mod folder is required.
+- Three BL2 Build IDs from the supplied `Borderlands2GOTY60FPS.zip` are supported.
+- F7 preset: NCE, Vulkan, 1x, GPU Fast, shader cache ON, Vulkan pipeline cache ON,
+  Sync Memory Operations ON, Force Max Clock ON, 6 pipeline workers, touch overlay OFF.
+- Pipeline and DMA-sync profiling remain in the instrumented build.
+- The earlier `nice(+10)` background-priority experiment is **not applied** in v0.3.
 
-## Fastest way: GitHub Actions
+## Built-in 60 FPS Build IDs
 
-1. Create an empty GitHub repository, for example `BL2-F7`.
-2. Upload **all files and folders from this package**, including the hidden `.github` folder.
-3. Commit them to the default branch.
-4. Open the repository's **Actions** tab.
-5. Select **Build BL2-F7 Android**.
-6. Press **Run workflow**.
-7. Choose:
-   - `instrumented` — recommended first build. Keeps the BL2-F7 diagnostic logging used to find pipeline/DMA stalls.
-   - `release` — cleaner performance build after the instrumented build is validated on the phone.
-8. When the workflow finishes, open that workflow run and download the artifact named `BL2-F7-...`.
+- `B5EA86B6AEFEEB73E61BC385C1E77F17`
+- `F367DE313B111EFF909C2A5C5D43E3F8`
+- `F7C233469F20EE3F2383F3CD5BCF775A`
 
-The APK is compiled in GitHub's Linux runner. You do not need Android Studio installed on your PC for this path.
+If the BL2 `main` NSO has one of these Build IDs, BL2-F7 applies the matching 19-byte IPS32 patch directly from the emulator core.
 
-## What the workflow does
+## Turnip V36
 
-The workflow automatically:
+The workflow downloads:
 
-- installs Java 17;
-- configures the Android SDK;
-- installs Android API 36, NDK `28.2.13676358`, and CMake `3.22.1`;
-- clones Eden from the upstream server, with the GitHub mirror as fallback;
-- checks out the exact v0.2.1 commit;
-- initializes all submodules;
-- applies `patch-kit/scripts/apply_bl2_f7.py`;
-- runs the BL2-F7 static verifier;
-- builds the selected Android variant;
-- uploads the generated APK as a GitHub Actions artifact.
+`https://github.com/StevenMXZ/Adreno-Tools-Drivers/releases/download/v36/Turnip_Gen8_V36.zip`
 
-## First build to use
+Expected archive SHA-256:
 
-Use **instrumented** first. On the POCO F7, run Borderlands 2 through the same test route you already use and capture logs containing:
+`a7b1209e9cd4e87aac70e46991d7f07465810ef667fcead24ae82bfa68d7388a`
 
-```text
-[BL2-F7]
-```
+Only `libvulkan_freedreno.so` and `meta.json` are embedded into the `bl2F7` flavor assets.
 
-The important messages include:
+## Build on GitHub
 
-```text
-[BL2-F7] runtime graphics pipeline build: ... us
-[BL2-F7] runtime compute pipeline build: ... us
-[BL2-F7] DMA sync fence wait: ... us
-```
+1. Replace the contents of your `AmzHook/BL2-F7` repository with this package.
+2. Keep `.github/workflows/build-bl2-f7.yml` at exactly that path.
+3. Open **Actions → Build BL2-F7 Android → Run workflow**.
+4. First choose `instrumented`.
+5. After validating 60 FPS / shader behavior, build `release`.
 
-These logs tell us whether a drop is mainly caused by runtime Vulkan pipeline creation or the mandatory Sync Memory Operations fence path.
+The workflow installs Android SDK 36, NDK 28.2, CMake 3.22.1 and `glslang-tools`, then checks out the exact Eden v0.2.1 commit and applies this patch kit.
 
-## Repository layout
+## Logs to look for
 
-```text
-BL2-F7/
-├── .github/
-│   └── workflows/
-│       └── build-bl2-f7.yml
-├── patch-kit/
-│   ├── files/
-│   ├── scripts/
-│   └── docs/
-├── scripts/
-│   ├── prepare-eden.sh
-│   └── build-local-linux.sh
-├── docs/
-├── LICENSE
-├── .gitignore
-└── README.md
-```
+Successful built-in mod:
 
-## Local Linux build
+`[BL2-F7] Applying built-in 60 FPS IPS32 patch for Build ID ...`
 
-If you later want to build locally, install the Android SDK/NDK requirements described by Eden, then run:
+Unsupported BL2 build:
 
-```bash
-./scripts/build-local-linux.sh instrumented
-```
+`[BL2-F7] No built-in 60 FPS patch for Build ID ...`
 
-or:
+Shader/pipeline stall:
 
-```bash
-./scripts/build-local-linux.sh release
-```
+`[BL2-F7] runtime graphics pipeline build: ...`
 
-## Licensing
+Sync-memory stall:
 
-The BL2-F7 modifications are intended to remain compatible with Eden's GPL licensing requirements. Eden itself remains a separate upstream project; this repository is a patch/build scaffold derived from and intended for use with its GPL source.
+`[BL2-F7] DMA sync fence wait: ...`
+
+## Important
+
+This package does not include Borderlands 2 game data, firmware, keys or copyrighted game assets. It only modifies the Eden runtime and incorporates the tiny user-supplied IPS32 frame-rate patches.
+
+
+## v0.4 config transfer
+
+BL2 per-game settings now include a dedicated **Importar / Exportar configuração** submenu. See `docs/V04-CONFIG-TRANSFER.md`.

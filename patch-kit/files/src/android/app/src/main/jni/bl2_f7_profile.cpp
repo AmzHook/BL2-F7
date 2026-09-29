@@ -66,32 +66,43 @@ bool IsPocoF7(const std::string& model, const std::string& device, const std::st
     return soc_match && device_match;
 }
 
-void ApplyPerformanceBaseline() {
+void ApplyStable60Preset() {
 #ifdef HAS_NCE
     Settings::values.cpu_backend.SetValue(Settings::CpuBackend::Nce);
 #endif
     Settings::values.use_multi_core.SetValue(true);
 
     Settings::values.renderer_backend.SetValue(Settings::RendererBackend::Vulkan);
+    Settings::values.resolution_setup.SetValue(Settings::ResolutionSetup::Res1X);
+    Settings::values.gpu_accuracy.SetValue(Settings::GpuAccuracy::Low);
+
     Settings::values.use_disk_shader_cache.SetValue(true);
     Settings::values.use_vulkan_driver_pipeline_cache.SetValue(true);
     Settings::values.accelerate_astc.SetValue(Settings::AstcDecodeMode::Gpu);
+    Settings::values.astc_recompression.SetValue(Settings::AstcRecompression::Uncompressed);
 
-    // Required on the target setup to pass BL2's intro reliably. The performance build
-    // instruments its actual fence-wait cost so a narrower workaround can be developed later.
+    // Required on the target setup to pass Borderlands 2's Gearbox intro reliably.
     Settings::values.sync_memory_operations.SetValue(true);
 
-    // The target is Adreno 825 and the user is testing with active cooling.
+    // The target POCO F7 is used with active cooling.
     Settings::values.renderer_force_max_clock.SetValue(true);
 
-    // Eden 0.2.1 intentionally defaults these off on Android for stability.
+    // Preserve the stable Eden v0.2.1 Android timing model.
     Settings::values.use_asynchronous_gpu_emulation.SetValue(false);
     Settings::values.async_presentation.SetValue(false);
+    Settings::values.use_asynchronous_shaders.SetValue(false);
+    Settings::values.use_reactive_flushing.SetValue(false);
 
-    // Four is the v0.2.1 conservative default. The fork exposes 2..8 for measured A/B tests.
+    // Do not force experimental EDS/unswizzle paths in the baseline build. The user's
+    // original Eden + V36 is already stable outside first-time shader compilation.
+    Settings::values.dyna_state.SetValue(Settings::ExtendedDynamicState::Disabled);
+    Settings::values.gpu_unswizzle_enabled.SetValue(false);
+
+    // Six workers gives the 8s Gen 4 more shader/pipeline parallelism without the previous
+    // BL2-F7 nice(+10) priority demotion. UI still exposes 2..8 for A/B testing.
     AndroidSettings::values.pipeline_worker_count.SetValue(kInitialPipelineWorkers);
 
-    // BL2-F7 is gamepad-first. These do not disable physical HID/gamepads.
+    // Gamepad-only target.
     AndroidSettings::values.show_input_overlay.SetValue(false);
     AndroidSettings::values.touchscreen.SetValue(false);
 }
@@ -107,7 +118,7 @@ ProfileResult TryApply(Core::System& system, const std::string& filepath) {
 
     const auto program_id = ReadProgramId(system, filepath);
     if (!program_id) {
-        LOG_WARNING(Frontend, "[BL2-F7] Could not read Program ID before boot; profile not applied");
+        LOG_WARNING(Frontend, "[BL2-F7] Could not read Program ID before boot");
         return result;
     }
 
@@ -120,23 +131,23 @@ ProfileResult TryApply(Core::System& system, const std::string& filepath) {
              result.poco_f7_detected);
 
     if (!result.title_detected) {
-        LOG_INFO(Frontend, "[BL2-F7] Non-BL2 title; keeping Eden v0.2.1 settings");
+        LOG_ERROR(Frontend, "[BL2-F7] Unsupported title blocked: {:016X}", result.program_id);
         return result;
     }
 
     if (!result.poco_f7_detected) {
         LOG_WARNING(Frontend,
-                    "[BL2-F7] Borderlands 2 detected but POCO F7/SM8735 was not detected; "
-                    "target profile not applied");
+                    "[BL2-F7] Borderlands 2 detected outside POCO F7/SM8735; "
+                    "single-title boot allowed, F7 preset not applied");
         return result;
     }
 
-    ApplyPerformanceBaseline();
+    ApplyStable60Preset();
     result.applied = true;
 
     LOG_INFO(Frontend,
-             "[BL2-F7] Performance profile applied: NCE(if available), Vulkan, caches=on, "
-             "sync-memory=on, max-clock=on, async-gpu=off, async-present=off, workers={}",
+             "[BL2-F7] Stable60 preset applied: NCE(if available), Vulkan, 1x, GPU-fast, "
+             "caches=on, sync-memory=on, max-clock=on, workers={}",
              kInitialPipelineWorkers);
     return result;
 }
