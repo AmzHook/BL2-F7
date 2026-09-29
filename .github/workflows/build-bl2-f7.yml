@@ -45,6 +45,14 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
 
+      - name: Install host shader compiler
+        shell: bash
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y glslang-tools
+          glslangValidator --version
+
       - name: Install Android build packages
         shell: bash
         run: |
