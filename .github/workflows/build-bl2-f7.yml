@@ -1,3 +1,6 @@
+
+    
+  
 name: Build BL2-F7 Android
 
 on:
@@ -41,7 +44,6 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
-          cache: gradle
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
@@ -93,4 +95,6 @@ jobs:
           set -euxo pipefail
           cd eden
           python3 ../patch-kit/scripts/verify_bl2_f7.py
+
+      - name: Build BL2-F7 APK
 
