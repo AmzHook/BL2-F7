@@ -23,11 +23,13 @@ env:
   EDEN_SHA: 58c1e20ee58efa3900ba616207d460886214480b
   ANDROID_NDK_VERSION: 28.2.13676358
   ANDROID_CMAKE_VERSION: 3.22.1
+  TURNIP_V36_URL: https://github.com/StevenMXZ/Adreno-Tools-Drivers/releases/download/v36/Turnip_Gen8_V36.zip
+  TURNIP_V36_SHA256: a7b1209e9cd4e87aac70e46991d7f07465810ef667fcead24ae82bfa68d7388a
 
 jobs:
   build:
     name: Build BL2-F7 (${{ inputs.build_variant }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 120
 
     steps:
@@ -45,12 +47,12 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
 
-      - name: Install host shader compiler
+      - name: Install host build dependencies
         shell: bash
         run: |
           set -euxo pipefail
           sudo apt-get update
-          sudo apt-get install -y glslang-tools
+          sudo apt-get install -y glslang-tools unzip curl
           glslangValidator --version
 
       - name: Install Android build packages
@@ -58,10 +60,26 @@ jobs:
         run: |
           set -euxo pipefail
           yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager             "platform-tools"             "platforms;android-36"             "build-tools;36.0.0"             "ndk;${ANDROID_NDK_VERSION}"             "cmake;${ANDROID_CMAKE_VERSION}"
+          sdkmanager \
+            "platform-tools" \
+            "platforms;android-36" \
+            "build-tools;36.0.0" \
+            "ndk;${ANDROID_NDK_VERSION}" \
+            "cmake;${ANDROID_CMAKE_VERSION}"
 
           echo "ANDROID_NDK_ROOT=${ANDROID_SDK_ROOT}/ndk/${ANDROID_NDK_VERSION}" >> "$GITHUB_ENV"
           echo "ANDROID_NDK_HOME=${ANDROID_SDK_ROOT}/ndk/${ANDROID_NDK_VERSION}" >> "$GITHUB_ENV"
+
+      - name: Fetch pinned Turnip Gen8 V36
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p patch-kit/vendor
+          curl -L --fail --retry 3 --retry-delay 2 \
+            -o patch-kit/vendor/Turnip_Gen8_V36.zip \
+            "${TURNIP_V36_URL}"
+          echo "${TURNIP_V36_SHA256}  patch-kit/vendor/Turnip_Gen8_V36.zip" | sha256sum -c -
+          unzip -l patch-kit/vendor/Turnip_Gen8_V36.zip
 
       - name: Show toolchain versions
         shell: bash
@@ -115,7 +133,10 @@ jobs:
           mkdir -p out/apk out/reports
 
           if [ -d eden/src/android/app/build/outputs/apk ]; then
-            find eden/src/android/app/build/outputs/apk               -type f -name '*.apk'               -print               -exec cp '{}' out/apk/ \;
+            find eden/src/android/app/build/outputs/apk \
+              -type f -name '*.apk' \
+              -print \
+              -exec cp '{}' out/apk/ \;
           fi
 
           if [ -d eden/src/android/app/build/reports ]; then
@@ -130,7 +151,7 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: BL2-F7-${{ inputs.build_variant }}-${{ github.run_number }}
+          name: BL2-F7-v0.4-${{ inputs.build_variant }}-${{ github.run_number }}
           path: out/apk/*.apk
           if-no-files-found: error
           retention-days: 30
@@ -139,7 +160,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: BL2-F7-build-diagnostics-${{ github.run_number }}
+          name: BL2-F7-v0.4-build-diagnostics-${{ github.run_number }}
           path: out/
           if-no-files-found: warn
           retention-days: 14
