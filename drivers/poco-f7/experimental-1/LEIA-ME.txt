@@ -1,0 +1,40 @@
+Turnip POCO F7 Experimental 1
+
+Use primeiro Turnip_POCO_F7_Experimental_1_Diag.zip.
+Importe o ZIP, sem extrair, pelo gerenciador de drivers GPU do Eden e selecione o pacote importado. A instalação pelo emulador não substitui o driver do sistema.
+
+Alvo: Adreno 825, POCO F7, Android 16 / HyperOS 3, Borderlands 2.
+Versão do Eden indicada: 4dc69c06f7. O APK indicado retornou HTTP403 nesta máquina e não foi inspecionado. A compatibilidade em execução precisa ser testada no aparelho.
+
+Logs
+O pacote Diag registra no Android logcat com a tag PocoF7-Turnip:
+- identificação da build e versão Mesa após criação da instância Vulkan;
+- GPU, chip_id e tamanho de página após inicialização do dispositivo físico;
+- duração em CPU das chamadas de criação de pipelines gráficos/compute quando o lote leva pelo menos 5000 us;
+- resultados Vulkan negativos nas chamadas de criação de pipelines.
+Os logs de pipelines informam o número pedido no lote. Não medem FPS, tempo de GPU, temperatura nem a causa completa de uma queda de desempenho.
+
+No computador com ADB e o telefone conectado/autorizado, execute:
+adb logcat -v threadtime "PocoF7-Turnip:I" "*:S" > PocoF7-Turnip.txt
+Abra o Eden, inicie Borderlands 2 e percorra a área de teste. Interrompa a captura com Ctrl+C.
+O log exportado pelo próprio Eden pode não incluir estas mensagens nativas do Android logcat.
+
+Comparação
+Turnip_POCO_F7_Experimental_1.zip usa a mesma base, sem os logs adicionais.
+Compare com seu V37 mantendo versão do emulador, save, resolução e percurso. Faça uma passagem inicial e outra com caches aquecidos. A troca de driver pode invalidar caches de pipelines.
+Se houver travamentos ou defeitos gráficos, selecione novamente o driver anterior no gerenciador do emulador.
+
+Origem e compilação
+Mesa 26.3.0-devel, ramo turnip/gen8:
+https://github.com/whitebelyash/mesa-unified/tree/9c7e022677dfa3abb356c2b6732cbd2e25783d01
+NDK 29.0.14206865, Android API35, ARM64, backend KGSL, release, segmentos ELF alinhados para 16KiB. Android16 é API36 e atende ao mínimo API35 deste pacote.
+LTO desativado conforme exigência desta revisão do Mesa. A compilação mantém os avisos de narrowing de C++, usando -Wno-error=c++11-narrowing para compatibilidade com o código existente do ramo.
+A versão com logs acrescenta somente diagnostics.patch a tu_device.cc e tu_pipeline.cc; não modifica configurações de renderização, sincronização, caches ou retorno das chamadas Vulkan.
+Esta não é uma reconstrução exata de StevenMXZ V37: a combinação completa de revisões e patches da release não estava disponível.
+
+Validação realizada: compilação nativa, teste de símbolos Android do Mesa, ELF ARM64, alinhamento 16KiB, dependências Android, exportação HMI, identificação da Adreno825, caminho KGSL, integridade ZIP e contrato meta.json. Os testes do helper de logs verificaram o limite de 5ms, formatação, erros e status positivos Vulkan.
+Ainda não validado: carregamento no APK indicado, criação real de dispositivo Vulkan, execução de jogos, FPS, temperatura e estabilidade no POCO F7. Não há promessa de melhoria de desempenho.
+
+Fontes e receita
+Os fontes originais, avisos de copyright e licenças estão na revisão fixa do Mesa indicada acima. Receita_POCO_F7.zip contém os scripts, o patch de diagnóstico, testes e manifests para reprodução neste ambiente. diagnostics.patch também está disponível diretamente nesta pasta.
+Hashes dos arquivos entregues constam em SHA256SUMS.

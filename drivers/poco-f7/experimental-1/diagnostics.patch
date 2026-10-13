@@ -1,0 +1,94 @@
+--- a/src/freedreno/vulkan/tu_device.cc
++++ b/src/freedreno/vulkan/tu_device.cc
+@@ -19,6 +19,7 @@
+ #include "util/disk_cache.h"
+ #include "util/driconf.h"
+ #include "util/hex.h"
++#include "util/log.h"
+ #include "util/os_misc.h"
+ #include "util/u_atomic.h"
+ #include "util/u_debug.h"
+@@ -1951,6 +1952,10 @@
+ 
+    /* gen8 and onwards must use kernel UAPI for perfcntr management */
+    device->is_perf_cntr_selectable &= (device->info->chip <= 7);
++   mesa_log(MESA_LOG_INFO, "PocoF7-Turnip",
++            "physical_device_ready gpu=%s chip_id=0x%" PRIx64 " page_size=%" PRIu64,
++            device->name, device->dev_id.chip_id, os_page_size);
++
+ 
+    return VK_SUCCESS;
+ 
+@@ -2048,6 +2053,9 @@
+    instance->vk.physical_devices.enumerate = tu_enumerate_devices;
+    instance->vk.physical_devices.destroy = tu_destroy_physical_device;
+ 
++   mesa_log(MESA_LOG_INFO, "PocoF7-Turnip",
++            "build=Experimental-1-Diag base=9c7e022677 Mesa=%s target=Eden-4dc69c06f7 pipeline_threshold_us=5000",
++            PACKAGE_VERSION);
+    instance->instance_idx = p_atomic_fetch_add(&instance_count, 1);
+    if (TU_DEBUG(STARTUP))
+       mesa_logi("Created an instance");
+--- a/src/freedreno/vulkan/tu_pipeline.cc
++++ b/src/freedreno/vulkan/tu_pipeline.cc
+@@ -16,6 +16,9 @@
+ #include "util/mesa-blake3.h"
+ #include "util/shader_stats.h"
+ #include "util/u_debug.h"
++#include "util/log.h"
++#include "util/os_time.h"
++#include <inttypes.h>
+ #include "vk_nir.h"
+ #include "vk_pipeline.h"
+ #include "vk_render_pass.h"
+@@ -31,6 +34,18 @@
+ #include "tu_lrz.h"
+ #include "tu_pass.h"
+ #include "tu_rmv.h"
++
++static void
++tu_poco_f7_pipeline_log(int64_t started_ns, const char *kind,
++                       uint32_t count, VkResult result)
++{
++   const int64_t elapsed_us = (os_time_get_nano() - started_ns) / 1000;
++   if (elapsed_us >= 5000 || result < 0) {
++      mesa_log(result < 0 ? MESA_LOG_ERROR : MESA_LOG_INFO, "PocoF7-Turnip",
++               "pipeline kind=%s count=%u cpu_us=%" PRIi64 " result=%d",
++               kind, count, elapsed_us, (int) result);
++   }
++}
+ 
+ /* Emit IB that preloads the descriptors that the shader uses */
+ 
+@@ -4920,6 +4935,7 @@
+                            VkPipeline *pPipelines)
+ {
+    MESA_TRACE_FUNC();
++   const int64_t poco_f7_started_ns = os_time_get_nano();
+    VkResult final_result = VK_SUCCESS;
+    uint32_t i = 0;
+ 
+@@ -4944,6 +4960,7 @@
+    for (; i < count; i++)
+       pPipelines[i] = VK_NULL_HANDLE;
+ 
++   tu_poco_f7_pipeline_log(poco_f7_started_ns, "graphics", count, final_result);
+    return final_result;
+ }
+ TU_GENX(tu_CreateGraphicsPipelines);
+@@ -5124,6 +5141,7 @@
+                           VkPipeline *pPipelines)
+ {
+    MESA_TRACE_FUNC();
++   const int64_t poco_f7_started_ns = os_time_get_nano();
+    VkResult final_result = VK_SUCCESS;
+    uint32_t i = 0;
+ 
+@@ -5148,6 +5166,7 @@
+    for (; i < count; i++)
+       pPipelines[i] = VK_NULL_HANDLE;
+ 
++   tu_poco_f7_pipeline_log(poco_f7_started_ns, "compute", count, final_result);
+    return final_result;
+ }
+ TU_GENX(tu_CreateComputePipelines);

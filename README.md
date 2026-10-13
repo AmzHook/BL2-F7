@@ -8,6 +8,19 @@ Target: POCO F7 / Snapdragon 8s Gen 4 / Adreno 825, using Borderlands 2 Program 
 
 This repository contains only the BL2-F7 patch/build tooling. It does **not** contain Borderlands 2, firmware, keys, copyrighted game assets, or a prebuilt Eden source tree.
 
+## Driver experimental para POCO F7
+
+Build experimental do Mesa Turnip para Adreno 825, Android 16 / HyperOS 3, com Borderlands 2 no Eden como alvo de teste:
+
+- [Baixar driver com logs — recomendado para o primeiro teste](https://github.com/AmzHook/BL2-F7/raw/refs/heads/main/drivers/poco-f7/experimental-1/Turnip_POCO_F7_Experimental_1_Diag.zip)
+- [Baixar driver sem logs — para comparação](https://github.com/AmzHook/BL2-F7/raw/refs/heads/main/drivers/poco-f7/experimental-1/Turnip_POCO_F7_Experimental_1.zip)
+- [Instruções de instalação e captura de logs](drivers/poco-f7/experimental-1/LEIA-ME.txt)
+- [Receita de compilação, patch e testes](drivers/poco-f7/experimental-1/Receita_POCO_F7.zip)
+
+Importe o ZIP **sem extrair** no gerenciador de drivers GPU do Eden e selecione-o. O pacote com logs identifica a versão/GPU e registra chamadas de criação de pipelines acima de 5 ms e erros Vulkan no Android logcat, com a tag `PocoF7-Turnip`.
+
+A compilação e as verificações do pacote passaram. Carregamento no Eden Nightly `4dc69c06f7`, execução de Borderlands 2, FPS e estabilidade ainda precisam ser validados no aparelho. Esta build não reproduz exatamente o StevenMXZ V37 nem promete melhoria de desempenho. [Origem e validação](drivers/poco-f7/experimental-1/build-manifest-diagnostic.json) · [SHA256](drivers/poco-f7/experimental-1/SHA256SUMS).
+
 ## Fastest way: GitHub Actions
 
 1. Create an empty GitHub repository, for example `BL2-F7`.

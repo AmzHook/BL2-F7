@@ -1,0 +1,36 @@
+{
+  "source": "https://github.com/whitebelyash/mesa-unified",
+  "branch": "turnip/gen8",
+  "commit": "9c7e022677dfa3abb356c2b6732cbd2e25783d01",
+  "mesa_version": "26.3.0-devel",
+  "ndk": "29.0.14206865",
+  "android_api": 35,
+  "eden_target_revision": "4dc69c06f764a235bccd01afbfc765d9ddbebc9f",
+  "eden_apk_inspected": false,
+  "source_changes": [],
+  "diagnostic_patch_sha256": null,
+  "instrumentation": [],
+  "compiler_compatibility": "-Wno-error=c++11-narrowing (warnings retained)",
+  "lto": false,
+  "package_sha256": "1e82836e7589b118866ef3e84a03403784bcea12e1067f9cc8c69f6c61ba1211",
+  "library_sha256": "13d156a5deec2b07469f9297287bd8daa6d7541c6f41a84887728ce0d31952c9",
+  "validation": [
+    "native compilation",
+    "Mesa Android symbol contract",
+    "ARM64 ELF",
+    "16 KiB LOAD segment alignment",
+    "Android shared dependencies",
+    "exported HMI",
+    "Adreno 825 identifier",
+    "KGSL device path",
+    "ZIP integrity"
+  ],
+  "not_validated": [
+    "load in supplied Eden APK",
+    "Vulkan device creation",
+    "gameplay correctness",
+    "FPS",
+    "thermals",
+    "device stability"
+  ]
+}
