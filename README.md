@@ -21,6 +21,10 @@ Importe o ZIP **sem extrair** no gerenciador de drivers GPU do Eden e selecione-
 
 A compilação e as verificações do pacote passaram. Carregamento no Eden Nightly `4dc69c06f7`, execução de Borderlands 2, FPS e estabilidade ainda precisam ser validados no aparelho. Esta build não reproduz exatamente o StevenMXZ V37 nem promete melhoria de desempenho. [Origem e validação](drivers/poco-f7/experimental-1/build-manifest-diagnostic.json) · [SHA256](drivers/poco-f7/experimental-1/SHA256SUMS).
 
+## Cache ao alternar drivers
+
+[Gerenciador de perfis de cache](docs/SHADER-CACHE-PROFILES.md): guarda o cache Vulkan de cada driver para reutilizá-lo ao voltar à mesma biblioteca e revisão do Eden. Trabalha numa pasta exportada, preserva os shaders mais recentes e faz backup antes de restaurar. A primeira execução com um driver novo ainda precisa compilar; a ferramenta não gera shaders inéditos nem compila pipelines fora do aparelho. [Baixar script Python](https://github.com/AmzHook/BL2-F7/raw/refs/heads/main/scripts/eden-cache-profiles.py).
+
 ## Fastest way: GitHub Actions
 
 1. Create an empty GitHub repository, for example `BL2-F7`.
